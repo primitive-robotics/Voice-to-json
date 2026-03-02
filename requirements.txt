@@ -1,0 +1,23 @@
+# ── Core dependencies ──────────────────────────────────────────────────────
+# Audio recording
+sounddevice>=0.4.6
+numpy>=1.24
+
+# ASR — install ONE of:
+#   faster (recommended, faster on CPU with int8 quantization):
+faster-whisper>=1.0.0
+#   OR official OpenAI Whisper (uncomment if faster-whisper unavailable):
+# openai-whisper>=20231117
+
+# JSON Schema validation
+jsonschema>=4.21.0
+
+# LLM — install the one matching your LLM_PROVIDER
+anthropic>=0.29.0          # LLM_PROVIDER=anthropic
+# openai>=1.30.0           # LLM_PROVIDER=openai  (uncomment if needed)
+
+# ── Optional but recommended ───────────────────────────────────────────────
+python-dotenv>=1.0.0       # auto-loads .env; or use the built-in loader in __main__.py
+
+# ── Dev / test ─────────────────────────────────────────────────────────────
+pytest>=8.0.0

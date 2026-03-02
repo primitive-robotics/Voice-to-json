@@ -1,0 +1,1 @@
+{"event": "llm_exhausted", "audio_file": "runs/20260302T161146/audio.wav", "transcript": "Pick up red box.", "error": "Unknown LLM_PROVIDER='anthropic          # anthropic | openai'. Set LLM_PROVIDER=anthropic or LLM_PROVIDER=openai."}
