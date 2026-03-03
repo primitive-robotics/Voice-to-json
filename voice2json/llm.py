@@ -30,7 +30,7 @@ SYSTEM_PROMPT = textwrap.dedent("""
     1. Output ONLY valid JSON — no markdown fences, no commentary, no extra text.
     2. Use the current ISO 8601 local timestamp for the "timestamp" field.
     3. "type" must always be "robot_command_v0".
-    4. "intent" must be one of: pick, place, move, inspect, pause, resume, stop, unknown.
+    4. "intent" must be one of: pick, place, move, inspect, pause, resume, stop, unknown, sequence.
     5. If the user says "stop", "abort", or "emergency stop": set intent="stop" and stop=true.
     6. If the command is ambiguous: set requires_confirmation=true and fill clarifying_question.
     7. If the text is NOT a robot instruction: set intent="unknown", requires_confirmation=true,
@@ -38,6 +38,12 @@ SYSTEM_PROMPT = textwrap.dedent("""
     8. "confidence" is a float 0.0–1.0 reflecting your certainty about the interpretation.
     9. Only include "target_description", "destination_description", "clarifying_question"
        when they add meaning (they are optional in the schema).
+    10. SEQUENCES: If the user gives multiple sequential actions (e.g. "move to X then pick up Y"),
+        set intent="sequence" and populate the "sequence" array with each step in order.
+        Each step has: intent, requires_confirmation, stop, and optional target_description,
+        destination_description, confidence, clarifying_question.
+        The top-level stop=true only if the whole sequence should immediately halt everything.
+        If any step is a stop command, set that step's stop=true and intent="stop".
 
     JSON Schema:
     {
@@ -46,20 +52,41 @@ SYSTEM_PROMPT = textwrap.dedent("""
       "required": ["type", "intent", "requires_confirmation", "stop", "timestamp"],
       "properties": {
         "type": {"const": "robot_command_v0"},
-        "intent": {"type": "string", "enum": ["pick","place","move","inspect","pause","resume","stop","unknown"]},
+        "intent": {"type": "string", "enum": ["pick","place","move","inspect","pause","resume","stop","unknown","sequence"]},
         "target_description": {"type": "string"},
         "destination_description": {"type": "string"},
         "requires_confirmation": {"type": "boolean"},
         "stop": {"type": "boolean"},
         "timestamp": {"type": "string"},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "clarifying_question": {"type": "string"}
+        "clarifying_question": {"type": "string"},
+        "sequence": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["intent", "requires_confirmation", "stop"],
+            "properties": {
+              "intent": {"type": "string", "enum": ["pick","place","move","inspect","pause","resume","stop","unknown"]},
+              "target_description": {"type": "string"},
+              "destination_description": {"type": "string"},
+              "requires_confirmation": {"type": "boolean"},
+              "stop": {"type": "boolean"},
+              "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+              "clarifying_question": {"type": "string"}
+            }
+          }
+        }
       }
     }
 
     Examples:
     Input: "pick up the red box"
     Output: {"type":"robot_command_v0","intent":"pick","target_description":"red box","requires_confirmation":false,"stop":false,"timestamp":"<ISO8601>","confidence":0.95}
+
+    Input: "move to position 3 then pick up the red box"
+    Output: {"type":"robot_command_v0","intent":"sequence","requires_confirmation":false,"stop":false,"timestamp":"<ISO8601>","confidence":0.93,"sequence":[{"intent":"move","target_description":"position 3","requires_confirmation":false,"stop":false,"confidence":0.95},{"intent":"pick","target_description":"red box","requires_confirmation":false,"stop":false,"confidence":0.93}]}
 
     Input: "stop"
     Output: {"type":"robot_command_v0","intent":"stop","requires_confirmation":false,"stop":true,"timestamp":"<ISO8601>","confidence":1.0}

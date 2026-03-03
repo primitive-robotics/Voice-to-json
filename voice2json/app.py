@@ -160,14 +160,26 @@ def run_loop() -> None:
         except SystemExit:
             break
 
-        # Pretty-print result
-        print("\n[app] ✓ Validated command:")
-        print(json.dumps(command, indent=2))
-
-        # Stop signal
-        if command.get("stop") is True or command.get("intent") == "stop":
-            print("\n[app] STOP command received — exiting loop.", flush=True)
-            break
+        # Pretty-print result and dispatch
+        if command.get("intent") == "sequence":
+            steps = command.get("sequence", [])
+            print(f"\n[app] ✓ Sequence of {len(steps)} commands:", flush=True)
+            halted = False
+            for i, step in enumerate(steps, 1):
+                print(f"\n[app] Step {i}/{len(steps)}:")
+                print(json.dumps(step, indent=2))
+                if step.get("stop") is True or step.get("intent") == "stop":
+                    print("\n[app] STOP step in sequence — halting.", flush=True)
+                    halted = True
+                    break
+            if halted or command.get("stop") is True:
+                break
+        else:
+            print("\n[app] ✓ Validated command:")
+            print(json.dumps(command, indent=2))
+            if command.get("stop") is True or command.get("intent") == "stop":
+                print("\n[app] STOP command received — exiting loop.", flush=True)
+                break
 
         # Ask to continue
         print("\n[app] Press ENTER to record another command, or Ctrl+C to quit.")

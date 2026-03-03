@@ -147,7 +147,7 @@ All 27 tests pass on Python 3.10–3.13.
 
 
 ## TODO (Mar 2 2026):
-Sequential execution: voice module only supports single commands and will not execute more than one command. Need to implement sequential execution
+
 
 **Known bugs**:
 N/a

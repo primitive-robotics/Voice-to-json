@@ -20,6 +20,24 @@ except ImportError:
 
 MAX_RETRIES = 3
 
+_INTENTS = ["pick", "place", "move", "inspect", "pause", "resume", "stop", "unknown"]
+
+# Schema for each step inside a sequence (no type/timestamp/sequence nesting)
+SEQUENCE_ITEM_SCHEMA: dict = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["intent", "requires_confirmation", "stop"],
+    "properties": {
+        "intent": {"type": "string", "enum": _INTENTS},
+        "target_description": {"type": "string"},
+        "destination_description": {"type": "string"},
+        "requires_confirmation": {"type": "boolean"},
+        "stop": {"type": "boolean"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "clarifying_question": {"type": "string"},
+    },
+}
+
 ROBOT_COMMAND_SCHEMA: dict = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
@@ -29,7 +47,7 @@ ROBOT_COMMAND_SCHEMA: dict = {
         "type": {"const": "robot_command_v0"},
         "intent": {
             "type": "string",
-            "enum": ["pick", "place", "move", "inspect", "pause", "resume", "stop", "unknown"],
+            "enum": _INTENTS + ["sequence"],
         },
         "target_description": {"type": "string"},
         "destination_description": {"type": "string"},
@@ -38,6 +56,11 @@ ROBOT_COMMAND_SCHEMA: dict = {
         "timestamp": {"type": "string"},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "clarifying_question": {"type": "string"},
+        "sequence": {
+            "type": "array",
+            "items": SEQUENCE_ITEM_SCHEMA,
+            "minItems": 2,
+        },
     },
 }
 

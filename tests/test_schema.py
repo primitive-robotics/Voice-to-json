@@ -15,6 +15,7 @@ from voice2json.schema import (
     validate_with_retry,
     parse_json,
     ROBOT_COMMAND_SCHEMA,
+    SEQUENCE_ITEM_SCHEMA,
 )
 
 
@@ -230,6 +231,75 @@ class TestValidateWithRetry:
         validate_with_retry("move left", llm_fn)
         assert feedbacks[0] is None          # first call: no feedback
         assert feedbacks[1] is not None      # second call: error feedback provided
+
+
+# ---------------------------------------------------------------------------
+# Sequence commands
+# ---------------------------------------------------------------------------
+
+class TestSequenceCommands:
+    def _step(self, **kwargs) -> dict:
+        step = {"intent": "move", "requires_confirmation": False, "stop": False}
+        step.update(kwargs)
+        return step
+
+    def test_valid_sequence(self):
+        cmd = _base(
+            intent="sequence",
+            sequence=[
+                self._step(intent="move", target_description="position 3"),
+                self._step(intent="pick", target_description="red box"),
+            ],
+        )
+        assert validate_command(cmd) is None
+
+    def test_sequence_requires_two_or_more_steps(self):
+        cmd = _base(
+            intent="sequence",
+            sequence=[self._step(intent="move")],  # only 1 — violates minItems:2
+        )
+        err = validate_command(cmd)
+        assert err is not None
+
+    def test_sequence_step_invalid_intent(self):
+        cmd = _base(
+            intent="sequence",
+            sequence=[
+                self._step(intent="fly"),           # invalid intent
+                self._step(intent="pick"),
+            ],
+        )
+        err = validate_command(cmd)
+        assert err is not None
+
+    def test_sequence_step_additional_property_rejected(self):
+        cmd = _base(
+            intent="sequence",
+            sequence=[
+                {**self._step(intent="move"), "robot_arm": "left"},  # extra field
+                self._step(intent="pick"),
+            ],
+        )
+        err = validate_command(cmd)
+        assert err is not None
+
+    def test_sequence_with_stop_step(self):
+        cmd = _base(
+            intent="sequence",
+            sequence=[
+                self._step(intent="move", target_description="position 3"),
+                self._step(intent="stop", stop=True),
+            ],
+        )
+        assert validate_command(cmd) is None
+
+    def test_sequence_intent_accepted_in_schema(self):
+        # "sequence" is now a valid top-level intent
+        cmd = _base(intent="sequence", sequence=[
+            self._step(intent="pick"),
+            self._step(intent="place"),
+        ])
+        assert validate_command(cmd) is None
 
 
 # ---------------------------------------------------------------------------
