@@ -147,7 +147,7 @@ All 27 tests pass on Python 3.10–3.13.
 
 
 ## TODO (Mar 2 2026):
-
+write json to a local file for future visual module
 
 **Known bugs**:
 N/a
