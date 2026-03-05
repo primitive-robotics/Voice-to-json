@@ -146,8 +146,8 @@ All 27 tests pass on Python 3.10–3.13.
   └─────────┴──────────────────────────────────────────────────┘
 
 
-## TODO (Mar 2 2026):
-write json to a local file for future visual module
+## TODO (Mar 4 2026):
+The voice whisperer module is kinda skuffed rn, keeps making mistake with the voice detection, need fix, maybe completely replace the pipeline with openai multimodel system
 
 **Known bugs**:
-N/a
+Voice detection sometimes derp out
