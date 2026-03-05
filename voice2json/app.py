@@ -15,6 +15,7 @@ from voice2json.audio import record_audio
 from voice2json.asr import transcribe
 from voice2json.llm import generate_command
 from voice2json.schema import validate_with_retry
+from voice2json.vision import run_vision
 
 RUNS_DIR = Path(os.getenv("RUNS_DIR", "runs"))
 
@@ -160,7 +161,14 @@ def run_loop() -> None:
         except SystemExit:
             break
 
-        # Pretty-print result and dispatch
+        # ── Phase 2: Vision ───────────────────────────────────────────────
+        print("\n[app] Phase 2 — Vision targeting…", flush=True)
+        vision_result = run_vision(command, run_dir)
+        print("\n[app] ✓ Vision result:")
+        print(json.dumps(vision_result, indent=2))
+        _log(run_dir, {"event": "vision", "vision_result": vision_result})
+
+        # ── Pretty-print Phase 1 result and dispatch ──────────────────────
         if command.get("intent") == "sequence":
             steps = command.get("sequence", [])
             print(f"\n[app] ✓ Sequence of {len(steps)} commands:", flush=True)
@@ -194,8 +202,8 @@ def _print_banner() -> None:
     print(
         "\n"
         "╔══════════════════════════════════════════════╗\n"
-        "║         voice2json  –  Phase 1 Prototype     ║\n"
-        "║  microphone → Whisper → LLM → robot JSON     ║\n"
+        "║         voice2json  –  Phase 1 + 2           ║\n"
+        "║  mic → Whisper → LLM → Vision → robot JSON  ║\n"
         "╚══════════════════════════════════════════════╝\n"
         "\n"
         "Controls:\n"
@@ -204,6 +212,8 @@ def _print_banner() -> None:
         "\n"
         f"Provider : {os.getenv('LLM_PROVIDER','anthropic')}\n"
         f"Model    : {os.getenv('LLM_MODEL','(default)')}\n"
+        f"Vision   : CLAUDE_MODEL={os.getenv('CLAUDE_MODEL','claude-sonnet-4-6')}  "
+        f"CAPTURE={os.getenv('VISION_CAPTURE_MODE','manual')}\n"
         f"ASR      : WHISPER_MODEL={os.getenv('WHISPER_MODEL','base')}\n"
         f"Runs dir : {RUNS_DIR.resolve()}\n",
         flush=True,

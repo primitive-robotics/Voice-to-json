@@ -3,6 +3,9 @@
 sounddevice>=0.4.6
 numpy>=1.24
 
+# Vision (Phase 2)
+opencv-python>=4.8.0
+
 # ASR — install ONE of:
 #   faster (recommended, faster on CPU with int8 quantization):
 faster-whisper>=1.0.0

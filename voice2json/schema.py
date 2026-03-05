@@ -8,7 +8,7 @@ output passes validation.
 
 import json
 import re
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, Union
 
 try:
     import jsonschema
@@ -65,6 +65,46 @@ ROBOT_COMMAND_SCHEMA: dict = {
 }
 
 
+ROBOT_VISION_SCHEMA: dict = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["type", "found", "requires_confirmation", "timestamp"],
+    "properties": {
+        "type": {"const": "robot_vision_v0"},
+        "found": {"type": "boolean"},
+        "x_pixel": {"type": "integer"},
+        "y_pixel": {"type": "integer"},
+        "bbox": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["x1", "y1", "x2", "y2"],
+            "properties": {
+                "x1": {"type": "integer"},
+                "y1": {"type": "integer"},
+                "x2": {"type": "integer"},
+                "y2": {"type": "integer"},
+            },
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "label": {"type": "string"},
+        "requires_confirmation": {"type": "boolean"},
+        "clarifying_question": {"type": "string"},
+        "timestamp": {"type": "string"},
+    },
+}
+
+
+def validate_vision_result(data: dict) -> Optional[str]:
+    """Validate *data* against ROBOT_VISION_SCHEMA. Returns None if valid, else error string."""
+    try:
+        validate(instance=data, schema=ROBOT_VISION_SCHEMA)
+        return None
+    except ValidationError as exc:
+        path = " → ".join(str(p) for p in exc.absolute_path) if exc.absolute_path else "root"
+        return f"Schema validation error at '{path}': {exc.message}"
+
+
 def _strip_markdown_fences(text: str) -> str:
     """Remove ```json … ``` or ``` … ``` wrappers if the LLM added them."""
     text = text.strip()
@@ -113,6 +153,7 @@ def validate_with_retry(
     llm_fn: Callable[[str, Optional[str]], str],
     *,
     max_retries: int = MAX_RETRIES,
+    validator: Optional[Callable[[dict], Optional[str]]] = None,
 ) -> Tuple[dict, str, list[str]]:
     """
     Call *llm_fn* and validate the result, retrying on failure.
@@ -145,7 +186,8 @@ def validate_with_retry(
             print(f"[schema] {parse_err}", flush=True)
             continue
 
-        val_err = validate_command(parsed)
+        _validator = validator if validator is not None else validate_command
+        val_err = _validator(parsed)
         if val_err:
             error_feedback = val_err
             errors.append(f"Attempt {attempt}: {val_err}")

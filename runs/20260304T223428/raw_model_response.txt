@@ -1,0 +1,1 @@
+{"type":"robot_vision_v0","found":true,"x_pixel":452,"y_pixel":255,"bbox":{"x1":390,"y1":185,"x2":514,"y2":325},"confidence":0.97,"label":"red plastic cup (Solo-style), held in right hand","requires_confirmation":false,"timestamp":"2025-01-30T12:00:00"}

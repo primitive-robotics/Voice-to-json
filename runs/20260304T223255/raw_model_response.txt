@@ -1,0 +1,1 @@
+{"type":"robot_vision_v0","found":true,"x_pixel":330,"y_pixel":370,"bbox":{"x1":230,"y1":290,"x2":430,"y2":480},"confidence":0.97,"label":"red Solo cup held by person","requires_confirmation":false,"timestamp":"2025-01-30T12:00:00"}
